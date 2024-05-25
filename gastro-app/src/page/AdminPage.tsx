@@ -6,6 +6,9 @@ export const AdminPage = () => {
   const firstCalendarDay = toFirstDayOfMonth(2024, 5);
   const calendarDays = toCalendarDays(firstCalendarDay);
   const calendarMonth = formatCalendarMonth(firstCalendarDay);
+  const weekdayNames = calendarDays.slice(0, 7).map((calendarDay) => {
+    return formatCalendarDay(calendarDay).weekdayName;
+  });
 
   return (
     <Layout>
@@ -15,19 +18,18 @@ export const AdminPage = () => {
         </Link>
         <div className="pb-4">
           <div>{calendarMonth}</div>
-          <div>
-            {calendarDays.slice(0, 7).map((calendarDay) => {
-              return <div>{formatCalendarDay(calendarDay).date}</div>;
-            })}
-          </div>
-          <StaffTable />
+          <StaffTable weekdayNames={weekdayNames} />
         </div>
       </div>
     </Layout>
   );
 };
 
-const StaffTable = () => {
+type StaffTableProps = {
+  weekdayNames: string[];
+};
+
+const StaffTable = (props: StaffTableProps) => {
   const numOfWeekdays = 7;
   const memberNames = [
     "staff member 0000",
@@ -40,12 +42,9 @@ const StaffTable = () => {
     <Table>
       <TableRow>
         <TableCell></TableCell>
-        <TableCell></TableCell>
-        <TableCell></TableCell>
-        <TableCell></TableCell>
-        <TableCell></TableCell>
-        <TableCell></TableCell>
-        <TableCell></TableCell>
+        {props.weekdayNames.map((weekdayName) => {
+          return <TableCell key={weekdayName}>{weekdayName}</TableCell>;
+        })}
       </TableRow>
       {memberNames.map((memberName) => {
         return (
@@ -106,26 +105,6 @@ const TableCell = (props: TableCellProps) => {
 
 const range = (start: number, end: number): number[] => {
   return [...Array(end - start).keys()].map((index) => start + index);
-};
-
-const createDatespan = (date: string, startDate?: string, endDate?: string) => {
-  if (startDate && endDate) {
-    return { startDate: date };
-  }
-  if (startDate) {
-    return { startDate, endDate: date };
-  }
-  return { startDate: date };
-};
-
-const isWithinDatespan = (date: string, startDate?: string, endDate?: string): boolean => {
-  if (startDate && endDate) {
-    return startDate <= date && date <= endDate;
-  }
-  if (startDate) {
-    return date === startDate;
-  }
-  return false;
 };
 
 const toFirstDayOfMonth = (year: number, month: number, locale = "en-US") => {
