@@ -1,7 +1,12 @@
+import { DateTime, Interval } from "luxon";
 import { Link } from "react-router-dom";
 import { Layout } from "./Layout";
 
 export const AdminPage = () => {
+  const firstCalendarDay = toFirstDayOfMonth(2024, 5);
+  const calendarDays = toCalendarDays(firstCalendarDay);
+  const calendarMonth = formatCalendarMonth(firstCalendarDay);
+
   return (
     <Layout>
       <div className="p-4">
@@ -9,6 +14,12 @@ export const AdminPage = () => {
           back
         </Link>
         <div className="pb-4">
+          <div>{calendarMonth}</div>
+          <div>
+            {calendarDays.slice(0, 7).map((calendarDay) => {
+              return <div>{formatCalendarDay(calendarDay).date}</div>;
+            })}
+          </div>
           <StaffTable />
         </div>
       </div>
@@ -38,12 +49,12 @@ const StaffTable = () => {
       </TableRow>
       {memberNames.map((memberName) => {
         return (
-          <TableRow>
+          <TableRow key={memberName}>
             <TableCell>
               <AvatarLabel name={memberName} initials={memberName[0]} />
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
-              return <TableCell>{index + 1}</TableCell>;
+              return <TableCell key={index}>{index + 1}</TableCell>;
             })}
           </TableRow>
         );
@@ -95,4 +106,56 @@ const TableCell = (props: TableCellProps) => {
 
 const range = (start: number, end: number): number[] => {
   return [...Array(end - start).keys()].map((index) => start + index);
+};
+
+const createDatespan = (date: string, startDate?: string, endDate?: string) => {
+  if (startDate && endDate) {
+    return { startDate: date };
+  }
+  if (startDate) {
+    return { startDate, endDate: date };
+  }
+  return { startDate: date };
+};
+
+const isWithinDatespan = (date: string, startDate?: string, endDate?: string): boolean => {
+  if (startDate && endDate) {
+    return startDate <= date && date <= endDate;
+  }
+  if (startDate) {
+    return date === startDate;
+  }
+  return false;
+};
+
+const toFirstDayOfMonth = (year: number, month: number, locale = "en-US") => {
+  return DateTime.fromObject({ year, month, day: 1 }).setLocale(locale);
+};
+
+const toCalendarDays = (firstDayOfMonth: DateTime, weekdayOffset = 0) => {
+  const startDate = firstDayOfMonth.startOf("month").startOf("week").plus({ days: weekdayOffset });
+  const endDate = firstDayOfMonth.endOf("month").endOf("week").plus({ days: weekdayOffset });
+  const calendarDays = Interval.fromDateTimes(startDate, endDate)
+    .splitBy({ days: 1 })
+    .map((interval) => interval.start ?? throwError("invalid start datetime in interval"));
+  return calendarDays;
+};
+
+const formatCalendarDay = (calendarDay: DateTime) => {
+  return {
+    date: calendarDay.toISODate() ?? throwError("failed to convert from datetime to iso-date"),
+    day: calendarDay.day,
+    month: calendarDay.month,
+    monthName: calendarDay.toFormat("MMM"),
+    weekday: calendarDay.weekday,
+    weekdayName: calendarDay.toFormat("EEE"),
+  };
+};
+
+const formatCalendarMonth = (firstDayOfMonth: DateTime) => {
+  return firstDayOfMonth.toFormat("MMMM yyyy");
+};
+
+const throwError = (message: string): never => {
+  throw new Error(message);
 };
