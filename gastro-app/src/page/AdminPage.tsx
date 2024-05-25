@@ -1,6 +1,7 @@
 import { DateTime, Interval } from "luxon";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { range, throwError } from "../helper/utils";
 import { Layout } from "./Layout";
 
 export const AdminPage = () => {
@@ -125,10 +126,6 @@ const TableCell = (props: TableCellProps) => {
   return <div className="table-cell p-2 border border-slate-400">{props.children}</div>;
 };
 
-const range = (start: number, end: number): number[] => {
-  return [...Array(end - start).keys()].map((index) => start + index);
-};
-
 const toFirstDayOfWeek = (weekOffset: number, locale = "en-US") => {
   const now = DateTime.now();
   const firstDayOfWeek = DateTime.fromObject({
@@ -160,8 +157,4 @@ const formatCalendarDay = (calendarDay: DateTime) => {
 
 const formatCalendarMonth = (firstDayOfMonth: DateTime) => {
   return firstDayOfMonth.toFormat("MMMM yyyy");
-};
-
-const throwError = (message: string): never => {
-  throw new Error(message);
 };

@@ -3,7 +3,8 @@ import { useState } from "react";
 import { I18nProvider, useDateFormatter } from "react-aria";
 import { Link } from "react-router-dom";
 import { classNames } from "./helper/classes";
-import { useInterval } from "./helper/useInterval";
+import { useInterval } from "./helper/hooks";
+import { range } from "./helper/utils";
 import { Layout } from "./page/Layout";
 
 export const App = () => {
@@ -139,8 +140,4 @@ const PincodeInputButton = (props: PincodeInputButtonProps) => {
       {props.children}
     </button>
   );
-};
-
-const range = (start: number, end: number): number[] => {
-  return [...Array(end - start).keys()].map((index) => start + index);
 };
