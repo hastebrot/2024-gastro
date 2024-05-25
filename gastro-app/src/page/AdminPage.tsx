@@ -1,14 +1,25 @@
 import { DateTime, Interval } from "luxon";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "./Layout";
 
 export const AdminPage = () => {
-  const firstCalendarDay = toFirstDayOfMonth(2024, 5);
-  const calendarDays = toCalendarDays(firstCalendarDay);
-  const calendarMonth = formatCalendarMonth(firstCalendarDay);
-  const weekdayNames = calendarDays.slice(0, 7).map((calendarDay) => {
-    return formatCalendarDay(calendarDay).weekdayName;
+  const [weekOffset, setWeekOffset] = useState(0);
+  const firstDayOfWeek = toFirstDayOfWeek(weekOffset);
+  const calendarMonth = formatCalendarMonth(firstDayOfWeek);
+  const calendarDays = toCalendarDaysOfWeek(firstDayOfWeek);
+  const weekdayNames = calendarDays.map((calendarDay) => {
+    return `${formatCalendarDay(calendarDay).weekdayName} ${calendarDay.day}`;
   });
+  const onCurrentWeekClicked = () => {
+    setWeekOffset(0);
+  };
+  const onPreviousWeekClicked = () => {
+    setWeekOffset((weekOffset) => weekOffset - 1);
+  };
+  const onNextWeekClicked = () => {
+    setWeekOffset((weekOffset) => weekOffset + 1);
+  };
 
   return (
     <Layout>
@@ -16,10 +27,21 @@ export const AdminPage = () => {
         <Link className="underline text-blue-600" to="/">
           back
         </Link>
-        <div className="pb-4">
-          <div>{calendarMonth}</div>
-          <StaffTable weekdayNames={weekdayNames} />
+        <div className="pb-4 flex items-center gap-2">
+          <button className="underline text-blue-600" onClick={onCurrentWeekClicked}>
+            current
+          </button>
+          <button className="underline text-blue-600" onClick={onPreviousWeekClicked}>
+            prev
+          </button>
+          <button className="underline text-blue-600" onClick={onNextWeekClicked}>
+            next
+          </button>
+          <div>
+            {calendarMonth} (week {firstDayOfWeek.weekNumber})
+          </div>
         </div>
+        <StaffTable weekdayNames={weekdayNames} />
       </div>
     </Layout>
   );
@@ -53,7 +75,7 @@ const StaffTable = (props: StaffTableProps) => {
               <AvatarLabel name={memberName} initials={memberName[0]} />
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
-              return <TableCell key={index}>{index + 1}</TableCell>;
+              return <TableCell key={index}></TableCell>;
             })}
           </TableRow>
         );
@@ -107,13 +129,18 @@ const range = (start: number, end: number): number[] => {
   return [...Array(end - start).keys()].map((index) => start + index);
 };
 
-const toFirstDayOfMonth = (year: number, month: number, locale = "en-US") => {
-  return DateTime.fromObject({ year, month, day: 1 }).setLocale(locale);
+const toFirstDayOfWeek = (weekOffset: number, locale = "en-US") => {
+  const now = DateTime.now();
+  const firstDayOfWeek = DateTime.fromObject({
+    weekYear: now.weekYear,
+    weekNumber: now.weekNumber,
+  }).setLocale(locale);
+  return firstDayOfWeek.plus({ weeks: weekOffset });
 };
 
-const toCalendarDays = (firstDayOfMonth: DateTime, weekdayOffset = 0) => {
-  const startDate = firstDayOfMonth.startOf("month").startOf("week").plus({ days: weekdayOffset });
-  const endDate = firstDayOfMonth.endOf("month").endOf("week").plus({ days: weekdayOffset });
+const toCalendarDaysOfWeek = (firstDayOfWeek: DateTime) => {
+  const startDate = firstDayOfWeek.startOf("week");
+  const endDate = firstDayOfWeek.endOf("week");
   const calendarDays = Interval.fromDateTimes(startDate, endDate)
     .splitBy({ days: 1 })
     .map((interval) => interval.start ?? throwError("invalid start datetime in interval"));
