@@ -1,8 +1,10 @@
 import * as Icon from "lucide-react";
 import { useState } from "react";
 import { I18nProvider, useDateFormatter } from "react-aria";
+import { Link } from "react-router-dom";
 import { classNames } from "./helper/classes";
 import { useInterval } from "./helper/useInterval";
+import { Layout } from "./page/Layout";
 
 export const App = () => {
   // const locale = "en-US";
@@ -11,16 +13,23 @@ export const App = () => {
 
   return (
     <I18nProvider locale={locale}>
-      <div className="min-h-dvh font-sans grid grid-rows-2 sm:grid-rows-1 sm:grid-cols-2">
-        <div className="bg-gray-100 p-4 text-xl font-semibold">Good morning!</div>
-        <div className="p-4 flex flex-col gap-8">
-          <CurrentDate />
-          <PincodeInput
-            requiredDigits={4}
-            onCompleted={(enteredDigits) => alert(JSON.stringify(enteredDigits))}
-          />
+      <Layout>
+        <div className="grid grid-rows-2 sm:grid-rows-1 sm:grid-cols-2">
+          <div className="bg-gray-100 p-4">
+            <div className="text-xl font-semibold">Good morning!</div>
+            <Link className="underline text-blue-600" to="/admin">
+              admin
+            </Link>
+          </div>
+          <div className="p-4 flex flex-col gap-8">
+            <CurrentDate />
+            <PincodeInput
+              requiredDigits={4}
+              onCompleted={(enteredDigits) => alert(JSON.stringify(enteredDigits))}
+            />
+          </div>
         </div>
-      </div>
+      </Layout>
     </I18nProvider>
   );
 };
