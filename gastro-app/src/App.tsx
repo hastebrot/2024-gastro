@@ -2,12 +2,17 @@ import * as Icon from "lucide-react";
 import { useState } from "react";
 import { I18nProvider, useDateFormatter } from "react-aria";
 import { Link } from "react-router-dom";
+import { useSnapshot } from "valtio";
 import { classNames } from "./helper/classes";
 import { useInterval } from "./helper/hooks";
 import { range } from "./helper/utils";
 import { Layout } from "./page/Layout";
+import { store } from "./store";
 
 export const App = () => {
+  const title = useSnapshot(store.board).title;
+  store.board.title = "foo";
+
   // const locale = "en-US";
   // const locale = "de-DE";
   const locale = undefined;
@@ -16,8 +21,9 @@ export const App = () => {
     <I18nProvider locale={locale}>
       <Layout>
         <div className="grid grid-rows-2 sm:grid-rows-1 sm:grid-cols-2">
-          <div className="bg-gray-100 p-4">
+          <div className="bg-gray-200 p-4">
             <div className="text-xl font-semibold">Good morning!</div>
+            <div>{title}</div>
             <Link className="underline text-blue-600" to="/admin">
               admin
             </Link>
@@ -93,6 +99,9 @@ const PincodeInput = (props: PincodeInputProps) => {
         <PincodeInputButton onClick={onButtonClicked("9")}>9</PincodeInputButton>
         <div></div>
         <PincodeInputButton onClick={onButtonClicked("0")}>0</PincodeInputButton>
+        {/* <div className="flex items-center justify-center">
+          <Icon.Delete className="h-[36px] w-[36px] [&_path]:stroke-green-500 [&_path]:fill-green-500" />
+        </div> */}
         <PincodeInputButton onClick={onClearButtonClicked}>
           <Icon.Delete className="h-[24px] w-[24px]" />
         </PincodeInputButton>

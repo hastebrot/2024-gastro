@@ -1,7 +1,25 @@
+import * as Icon from "lucide-react";
 import { DateTime, Interval } from "luxon";
 import { useState } from "react";
+import {
+  Button,
+  Dialog,
+  Heading,
+  Input,
+  Label,
+  ListBox,
+  ListBoxItem,
+  Modal,
+  ModalOverlay,
+  Popover,
+  Select,
+  SelectValue,
+  TextField,
+} from "react-aria-components";
 import { Link } from "react-router-dom";
+import { useSnapshot } from "valtio";
 import { range, throwError } from "../helper/utils";
+import { store } from "../store";
 import { Layout } from "./Layout";
 
 export const AdminPage = () => {
@@ -43,8 +61,97 @@ export const AdminPage = () => {
           </div>
         </div>
         <StaffTable weekdayNames={weekdayNames} />
+        <Tearsheet />
       </div>
     </Layout>
+  );
+};
+
+type TearsheetProps = {};
+
+const Tearsheet = (props: TearsheetProps) => {
+  const isOpen = useSnapshot(store.board).isOpen;
+
+  return (
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={(isOpen) => (store.board.isOpen = isOpen)}
+      className="fixed inset-0 bg-gray-500/50"
+    >
+      <Modal className="fixed bottom-0 left-0 w-full z-10">
+        <TearsheetContent />
+      </Modal>
+    </ModalOverlay>
+  );
+};
+
+type TimeSelectProps = {
+  startTime: string;
+  endTime: string;
+  timeStep: string;
+};
+
+const TimeSelect = () => {
+  const startTime = DateTime.local(0, 1, 1, 8, 0, 0);
+  const endTime = DateTime.local(0, 1, 1, 17, 0, 0);
+  const timeSteps = Interval.fromDateTimes(startTime, endTime)
+    .splitBy({ minutes: 10 })
+    .map((interval) => interval.start ?? throwError("invalid start datetime in interval"));
+
+  return (
+    <Select>
+      <Label>Time</Label>
+      <Button>
+        <SelectValue />
+        <span aria-hidden="true">▼</span>
+      </Button>
+      <Popover>
+        <ListBox>
+          {timeSteps.map((timeStep) => {
+            return <ListBoxItem key={timeStep.toISOTime()}>{timeStep.toISOTime()}</ListBoxItem>;
+          })}
+        </ListBox>
+      </Popover>
+    </Select>
+  );
+};
+
+const TearsheetContent = () => {
+  return (
+    <Dialog className="h-[250px] p-4 bg-white outline-none">
+      {({ close }) => (
+        <form>
+          <div className="grid grid-cols-2">
+            <Heading slot="title">Heading</Heading>
+            <div>
+              <Icon.X />
+            </div>
+          </div>
+
+          <TimeSelect />
+
+          <TextField className="grid grid-cols-2">
+            <Label>Start time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <TextField className="grid grid-cols-2">
+            <Label>End time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <TextField className="grid grid-cols-2">
+            <Label>Break time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <div className="grid grid-cols-2">
+            <Button onPress={close}>Accept changes</Button>
+            <Button onPress={close}>Cancel</Button>
+          </div>
+        </form>
+      )}
+    </Dialog>
   );
 };
 
@@ -76,7 +183,16 @@ const StaffTable = (props: StaffTableProps) => {
               <AvatarLabel name={memberName} initials={memberName[0]} />
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
-              return <TableCell key={index}></TableCell>;
+              return (
+                <TableCell key={index}>
+                  <Button
+                    className="flex outline-none w-full h-full bg-green-500"
+                    onPress={() => (store.board.isOpen = true)}
+                  >
+                    .
+                  </Button>
+                </TableCell>
+              );
             })}
           </TableRow>
         );
