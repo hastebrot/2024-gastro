@@ -27,6 +27,9 @@ export const App = () => {
             <Link className="underline text-blue-600" to="/admin">
               admin
             </Link>
+            <Link className="underline text-blue-600" to="/dashboard">
+              dashboard
+            </Link>
           </div>
           <div className="p-4 flex flex-col gap-8">
             <CurrentDate />
