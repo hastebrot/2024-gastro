@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import * as Icon from "lucide-react";
 import { DateTime, Interval } from "luxon";
 import { useState } from "react";
@@ -42,7 +43,7 @@ export const AdminPage = () => {
 
   return (
     <Layout>
-      <div className="p-4">
+      <div className="bg-[#111315] text-[#FFFFFF] p-4">
         <Link className="underline text-blue-600" to="/">
           back
         </Link>
@@ -161,19 +162,18 @@ type StaffTableProps = {
 
 const StaffTable = (props: StaffTableProps) => {
   const numOfWeekdays = 7;
-  const memberNames = [
-    "staff member 0000",
-    "staff member 1111",
-    "staff member 2222",
-    "staff member 3333",
-  ];
+  const memberNames = ["A 0000", "B 1111", "C 2222", "D 3333"];
 
   return (
     <Table>
       <TableRow>
         <TableCell></TableCell>
         {props.weekdayNames.map((weekdayName) => {
-          return <TableCell key={weekdayName}>{weekdayName}</TableCell>;
+          return (
+            <TableCell key={weekdayName}>
+              <span className="whitespace-nowrap">{weekdayName}</span>
+            </TableCell>
+          );
         })}
       </TableRow>
       {memberNames.map((memberName) => {
@@ -183,14 +183,22 @@ const StaffTable = (props: StaffTableProps) => {
               <AvatarLabel name={memberName} initials={memberName[0]} />
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
+              const hasCard = Math.random() > 0.8;
+              const isDefaultCard = Math.random() > 0.5;
               return (
                 <TableCell key={index}>
-                  <Button
-                    className="flex outline-none w-full h-full bg-green-500"
-                    onPress={() => (store.board.isOpen = true)}
-                  >
-                    .
-                  </Button>
+                  {hasCard && (
+                    <Button
+                      className={clsx(
+                        "flex outline-none bg-[#2D2D2D] w-[90px] h-[90px] rounded-[4px] p-[10px]",
+                        isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
+                        isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
+                      )}
+                      onPress={() => (store.board.isOpen = true)}
+                    >
+                      Lorem
+                    </Button>
+                  )}
                 </TableCell>
               );
             })}
@@ -213,7 +221,7 @@ const AvatarLabel = (props: AvatarLabelProps) => {
       <div className="w-[24px] h-[24px] flex items-center justify-center flex-shrink-0 rounded-full bg-slate-300">
         <span className="uppercase text-sm leading-none">{props.initials}</span>
       </div>
-      <div>{props.name}</div>
+      <div className="whitespace-nowrap">{props.name}</div>
     </div>
   );
 };
@@ -223,7 +231,7 @@ type TableProps = {
 };
 
 const Table = (props: TableProps) => {
-  return <div className="table border-collapse border border-slate-400">{props.children}</div>;
+  return <div className="table border-collapse border border-[#333333]">{props.children}</div>;
 };
 
 type TableRowProps = {
@@ -239,7 +247,7 @@ type TableCellProps = {
 };
 
 const TableCell = (props: TableCellProps) => {
-  return <div className="table-cell p-2 border border-slate-400">{props.children}</div>;
+  return <div className="table-cell p-2 border border-[#333333]">{props.children}</div>;
 };
 
 const toFirstDayOfWeek = (weekOffset: number, locale = "en-US") => {
