@@ -57,7 +57,9 @@ export const AdminPage = () => {
             <DefaultButton onPress={onNextWeekClicked}>
               <Icon.ChevronRight className="w-[20px] h-[20px]" />
             </DefaultButton>
-            <DefaultButton onPress={onCurrentWeekClicked}>This week</DefaultButton>
+            <DefaultButton onPress={onCurrentWeekClicked}>
+              <span>This week</span>
+            </DefaultButton>
           </div>
         </div>
         <StaffTable calendarDays={calendarDays} />
