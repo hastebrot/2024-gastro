@@ -3,5 +3,9 @@ type LayoutProps = {
 };
 
 export const Layout = (props: LayoutProps) => {
-  return <div className="min-h-dvh font-sans grid">{props.children}</div>;
+  return (
+    <div className="min-h-dvh font-sans grid font-light text-[15px] leading-[20px]">
+      {props.children}
+    </div>
+  );
 };

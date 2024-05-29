@@ -1,7 +1,27 @@
+import clsx from "clsx";
+import * as Icon from "lucide-react";
 import { DateTime, Interval } from "luxon";
 import { useState } from "react";
+import {
+  Button,
+  Dialog,
+  Heading,
+  Input,
+  Label,
+  ListBox,
+  ListBoxItem,
+  Modal,
+  ModalOverlay,
+  Popover,
+  PressEvent,
+  Select,
+  SelectValue,
+  TextField,
+} from "react-aria-components";
 import { Link } from "react-router-dom";
+import { useSnapshot } from "valtio";
 import { range, throwError } from "../helper/utils";
+import { store } from "../store";
 import { Layout } from "./Layout";
 
 export const AdminPage = () => {
@@ -24,27 +44,136 @@ export const AdminPage = () => {
 
   return (
     <Layout>
-      <div className="p-4">
-        <Link className="underline text-blue-600" to="/">
-          back
-        </Link>
-        <div className="pb-4 flex items-center gap-2">
-          <button className="underline text-blue-600" onClick={onCurrentWeekClicked}>
-            current
-          </button>
-          <button className="underline text-blue-600" onClick={onPreviousWeekClicked}>
-            prev
-          </button>
-          <button className="underline text-blue-600" onClick={onNextWeekClicked}>
-            next
-          </button>
-          <div>
-            {calendarMonth} (week {firstDayOfWeek.weekNumber})
+      <div className="bg-[#111315] text-[#FFFFFF] p-4">
+        <div className="pb-4 flex items-center justify-between">
+          <Link
+            className="bg-[#2D2D2D] text-[#FFFFFF] rounded-[8px] h-[40px] px-[20px] gap-[4px] flex items-center"
+            to="/"
+          >
+            <Icon.ChevronLeft className="w-[20px] h-[20px]" />
+            <span>Back</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <div className="pr-[10px]">
+              Week {firstDayOfWeek.weekNumber} ({calendarMonth})
+            </div>
+            <DefaultButton onPress={onPreviousWeekClicked}>
+              <Icon.ChevronLeft className="w-[20px] h-[20px]" />
+            </DefaultButton>
+            <DefaultButton onPress={onNextWeekClicked}>
+              <Icon.ChevronRight className="w-[20px] h-[20px]" />
+            </DefaultButton>
+            <DefaultButton onPress={onCurrentWeekClicked}>This week</DefaultButton>
           </div>
         </div>
         <StaffTable weekdayNames={weekdayNames} />
+        <Tearsheet />
       </div>
     </Layout>
+  );
+};
+
+type DefaultButtonProps = {
+  children?: React.ReactNode;
+  onPress?: (e: PressEvent) => void;
+};
+
+const DefaultButton = (props: DefaultButtonProps) => {
+  return (
+    <Button
+      className="bg-[#2D2D2D] text-[#FFFFFF] rounded-[8px] h-[40px] px-[20px] gap-[4px] flex items-center"
+      onPress={props.onPress}
+    >
+      {props.children}
+    </Button>
+  );
+};
+
+type TearsheetProps = {};
+
+const Tearsheet = (props: TearsheetProps) => {
+  const isOpen = useSnapshot(store.board).isOpen;
+
+  return (
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={(isOpen) => (store.board.isOpen = isOpen)}
+      className="fixed inset-0 bg-gray-900/50"
+    >
+      <Modal className="fixed bottom-0 left-0 w-full z-10">
+        <TearsheetContent />
+      </Modal>
+    </ModalOverlay>
+  );
+};
+
+type TimeSelectProps = {
+  startTime?: string;
+  endTime?: string;
+  timeStep?: string;
+};
+
+const TimeSelect = (props: TimeSelectProps) => {
+  const startTime = DateTime.local(0, 1, 1, 8, 0, 0);
+  const endTime = DateTime.local(0, 1, 1, 17, 0, 0);
+  const timeSteps = Interval.fromDateTimes(startTime, endTime)
+    .splitBy({ minutes: 10 })
+    .map((interval) => interval.start ?? throwError("invalid start datetime in interval"));
+
+  return (
+    <Select>
+      <Label>Time</Label>
+      <Button>
+        <SelectValue />
+        <span aria-hidden="true">▼</span>
+      </Button>
+      <Popover>
+        <ListBox>
+          {timeSteps.map((timeStep) => {
+            return <ListBoxItem key={timeStep.toISOTime()}>{timeStep.toISOTime()}</ListBoxItem>;
+          })}
+        </ListBox>
+      </Popover>
+    </Select>
+  );
+};
+
+const TearsheetContent = () => {
+  return (
+    <Dialog className="h-[250px] p-4 bg-white outline-none">
+      {({ close }) => (
+        <form>
+          <div className="grid grid-cols-2">
+            <Heading slot="title">Heading</Heading>
+            <div>
+              <Icon.X />
+            </div>
+          </div>
+
+          <TimeSelect />
+
+          <TextField className="grid grid-cols-2">
+            <Label>Start time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <TextField className="grid grid-cols-2">
+            <Label>End time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <TextField className="grid grid-cols-2">
+            <Label>Break time</Label>
+            <Input type="time" />
+          </TextField>
+
+          <div className="grid grid-cols-2">
+            <Button onPress={close}>Accept changes</Button>
+            <Button onPress={close}>Cancel</Button>
+          </div>
+        </form>
+      )}
+    </Dialog>
   );
 };
 
@@ -54,29 +183,46 @@ type StaffTableProps = {
 
 const StaffTable = (props: StaffTableProps) => {
   const numOfWeekdays = 7;
-  const memberNames = [
-    "staff member 0000",
-    "staff member 1111",
-    "staff member 2222",
-    "staff member 3333",
-  ];
+  const memberNames = ["A 0000", "B 1111", "C 2222", "D 3333", "E 4444"];
 
   return (
     <Table>
       <TableRow>
-        <TableCell></TableCell>
+        <TableHeaderCell></TableHeaderCell>
         {props.weekdayNames.map((weekdayName) => {
-          return <TableCell key={weekdayName}>{weekdayName}</TableCell>;
+          return (
+            <TableHeaderCell key={weekdayName}>
+              <span className="whitespace-nowrap">{weekdayName}</span>
+            </TableHeaderCell>
+          );
         })}
       </TableRow>
       {memberNames.map((memberName) => {
         return (
           <TableRow key={memberName}>
             <TableCell>
-              <AvatarLabel name={memberName} initials={memberName[0]} />
+              <div className="p-[5px] pr-[10px]">
+                <AvatarLabel name={memberName} initials={memberName[0]} />
+              </div>
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
-              return <TableCell key={index}></TableCell>;
+              const hasCard = Math.random() > 0.6;
+              const isDefaultCard = Math.random() > 0.4;
+              return (
+                <TableCell key={index} hasDashedBorder>
+                  <Button
+                    className={clsx(
+                      !hasCard && "invisible",
+                      "flex outline-none bg-[#2D2D2D] w-[120px] h-[90px] rounded-[5px] p-[10px]",
+                      isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
+                      isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
+                    )}
+                    onPress={() => (store.board.isOpen = true)}
+                  >
+                    Lorem
+                  </Button>
+                </TableCell>
+              );
             })}
           </TableRow>
         );
@@ -92,12 +238,20 @@ type AvatarLabelProps = {
 };
 
 const AvatarLabel = (props: AvatarLabelProps) => {
+  const colors = ["#C9CAEC", "#CAE8DD", "#EACAD0"];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
   return (
-    <div className="flex flex-row items-center gap-[5px]">
-      <div className="w-[24px] h-[24px] flex items-center justify-center flex-shrink-0 rounded-full bg-slate-300">
+    <div className="flex flex-row items-center gap-[6px]">
+      <div
+        className={clsx(
+          "w-[28px] h-[28px] flex items-center justify-center flex-shrink-0 rounded-full bg-[--color] text-[#000000]"
+        )}
+        style={{ "--color": color } as React.CSSProperties}
+      >
         <span className="uppercase text-sm leading-none">{props.initials}</span>
       </div>
-      <div>{props.name}</div>
+      <div className="whitespace-nowrap">{props.name}</div>
     </div>
   );
 };
@@ -107,7 +261,7 @@ type TableProps = {
 };
 
 const Table = (props: TableProps) => {
-  return <div className="table border-collapse border border-slate-400">{props.children}</div>;
+  return <div className="table border-collapse">{props.children}</div>;
 };
 
 type TableRowProps = {
@@ -120,10 +274,32 @@ const TableRow = (props: TableRowProps) => {
 
 type TableCellProps = {
   children?: React.ReactNode;
+  hasDashedBorder?: boolean;
 };
 
 const TableCell = (props: TableCellProps) => {
-  return <div className="table-cell p-2 border border-slate-400">{props.children}</div>;
+  return (
+    <div
+      className={clsx(
+        "table-cell align-top text-left p-[5px] border border-[#333333]",
+        props.hasDashedBorder && "border-dashed"
+      )}
+    >
+      {props.children}
+    </div>
+  );
+};
+
+type TableHeaderCellProps = {
+  children?: React.ReactNode;
+};
+
+const TableHeaderCell = (props: TableHeaderCellProps) => {
+  return (
+    <div className="table-cell align-top text-center p-[5px] border-y border-[#333333]">
+      {props.children}
+    </div>
+  );
 };
 
 const toFirstDayOfWeek = (weekOffset: number, locale = "en-US") => {
