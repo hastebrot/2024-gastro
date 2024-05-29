@@ -27,11 +27,7 @@ import { Layout } from "./Layout";
 export const AdminPage = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const firstDayOfWeek = toFirstDayOfWeek(weekOffset);
-  const calendarMonth = formatCalendarMonth(firstDayOfWeek);
   const calendarDays = toCalendarDaysOfWeek(firstDayOfWeek);
-  const weekdayNames = calendarDays.map((calendarDay) => {
-    return `${formatCalendarDay(calendarDay).weekdayName} ${calendarDay.day}`;
-  });
   const onCurrentWeekClicked = () => {
     setWeekOffset(0);
   };
@@ -54,19 +50,19 @@ export const AdminPage = () => {
             <span>Back</span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="pr-[10px]">
-              Week {firstDayOfWeek.weekNumber} ({calendarMonth})
-            </div>
+            <div className="pr-[10px]">Week {firstDayOfWeek.weekNumber}</div>
             <DefaultButton onPress={onPreviousWeekClicked}>
               <Icon.ChevronLeft className="w-[20px] h-[20px]" />
             </DefaultButton>
             <DefaultButton onPress={onNextWeekClicked}>
               <Icon.ChevronRight className="w-[20px] h-[20px]" />
             </DefaultButton>
-            <DefaultButton onPress={onCurrentWeekClicked}>This week</DefaultButton>
+            <DefaultButton onPress={onCurrentWeekClicked}>
+              <span>This week</span>
+            </DefaultButton>
           </div>
         </div>
-        <StaffTable weekdayNames={weekdayNames} />
+        <StaffTable calendarDays={calendarDays} />
         <Tearsheet />
       </div>
     </Layout>
@@ -178,10 +174,11 @@ const TearsheetContent = () => {
 };
 
 type StaffTableProps = {
-  weekdayNames: string[];
+  calendarDays: DateTime[];
 };
 
 const StaffTable = (props: StaffTableProps) => {
+  let lastCalendarMonthName = "";
   const numOfWeekdays = 7;
   const memberNames = ["A 0000", "B 1111", "C 2222", "D 3333", "E 4444"];
 
@@ -189,10 +186,23 @@ const StaffTable = (props: StaffTableProps) => {
     <Table>
       <TableRow>
         <TableHeaderCell></TableHeaderCell>
-        {props.weekdayNames.map((weekdayName) => {
+        {props.calendarDays.map((calendarDay) => {
+          const weekdayName = `${formatCalendarDay(calendarDay).weekdayName} ${calendarDay.day}`;
+          const calendarMonthName = formatCalendarMonth(calendarDay);
+          const showCalendarMonthName = calendarMonthName !== lastCalendarMonthName;
+          lastCalendarMonthName = calendarMonthName;
+
           return (
             <TableHeaderCell key={weekdayName}>
-              <span className="whitespace-nowrap">{weekdayName}</span>
+              <div className="whitespace-nowrap">{weekdayName}</div>
+              <div
+                className={clsx(
+                  "whitespace-nowrap text-[#989898]",
+                  !showCalendarMonthName && "invisible"
+                )}
+              >
+                {calendarMonthName}
+              </div>
             </TableHeaderCell>
           );
         })}
@@ -332,5 +342,5 @@ const formatCalendarDay = (calendarDay: DateTime) => {
 };
 
 const formatCalendarMonth = (firstDayOfMonth: DateTime) => {
-  return firstDayOfMonth.toFormat("MMMM yyyy");
+  return firstDayOfMonth.toFormat("MMM yyyy");
 };
