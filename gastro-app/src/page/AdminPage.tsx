@@ -17,6 +17,7 @@ import {
 } from "react-aria-components";
 import { Link } from "react-router-dom";
 import { useSnapshot } from "valtio";
+import { NumberInput } from "../component/NumberInput";
 import { SelectInput } from "../component/SelectInput";
 import { TimeInput } from "../component/TimeInput";
 import { range, throwError } from "../helper/utils";
@@ -158,7 +159,7 @@ const TearsheetContent = () => {
             </div>
 
             <div>
-              <TimeInput label="Break time" hourCycle={24} />
+              <NumberInput label="Break time" />
             </div>
           </section>
 
