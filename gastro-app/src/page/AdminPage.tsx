@@ -6,8 +6,6 @@ import {
   Button,
   Dialog,
   Heading,
-  Input,
-  Label,
   ListBox,
   ListBoxItem,
   Modal,
@@ -16,10 +14,11 @@ import {
   PressEvent,
   Select,
   SelectValue,
-  TextField,
 } from "react-aria-components";
 import { Link } from "react-router-dom";
 import { useSnapshot } from "valtio";
+import { SelectInput } from "../component/SelectInput";
+import { TimeInput } from "../component/TimeInput";
 import { range, throwError } from "../helper/utils";
 import { store } from "../store";
 import { Layout } from "./Layout";
@@ -40,15 +39,16 @@ export const AdminPage = () => {
 
   return (
     <Layout>
-      <div className="bg-[#111315] text-[#FFFFFF] p-4">
-        <div className="pb-4 flex items-center justify-between">
+      <div className="bg-[#111315] text-[#FFFFFF] p-[15px]">
+        <section className="pb-[32px] flex items-center justify-between">
           <Link
             className="bg-[#2D2D2D] text-[#FFFFFF] rounded-[8px] h-[40px] px-[20px] gap-[4px] flex items-center"
             to="/"
           >
-            <Icon.ChevronLeft className="w-[20px] h-[20px]" />
+            <Icon.ChevronLeft className="w-[20px] h-[20px] ml-[-5px]" />
             <span>Back</span>
           </Link>
+
           <div className="flex items-center gap-2">
             <div className="pr-[10px]">Week {firstDayOfWeek.weekNumber}</div>
             <DefaultButton onPress={onPreviousWeekClicked}>
@@ -61,11 +61,38 @@ export const AdminPage = () => {
               <span>This week</span>
             </DefaultButton>
           </div>
-        </div>
-        <StaffTable calendarDays={calendarDays} />
-        <Tearsheet />
+        </section>
+
+        <section>
+          <StaffTable calendarDays={calendarDays} />
+        </section>
+
+        <Tearsheet>
+          <TearsheetContent />
+        </Tearsheet>
       </div>
     </Layout>
+  );
+};
+
+type ActionButtonProps = {
+  children?: React.ReactNode;
+  onPress?: (e: PressEvent) => void;
+  isPrimary?: boolean;
+};
+
+const ActionButton = (props: ActionButtonProps) => {
+  return (
+    <Button
+      className={clsx(
+        "h-[40px] w-[220px] flex items-center justify-center rounded-[18px] outline-none",
+        !props.isPrimary && "border border-[#505051]",
+        props.isPrimary && "bg-[#FFFFFF] text-[#111315]"
+      )}
+      onPress={props.onPress}
+    >
+      {props.children}
+    </Button>
   );
 };
 
@@ -77,7 +104,10 @@ type DefaultButtonProps = {
 const DefaultButton = (props: DefaultButtonProps) => {
   return (
     <Button
-      className="bg-[#2D2D2D] text-[#FFFFFF] rounded-[8px] h-[40px] px-[20px] gap-[4px] flex items-center"
+      className={clsx(
+        "bg-[#2D2D2D] text-[#FFFFFF]",
+        "rounded-[8px] h-[40px] px-[20px] gap-[4px] flex items-center outline-none"
+      )}
       onPress={props.onPress}
     >
       {props.children}
@@ -85,7 +115,9 @@ const DefaultButton = (props: DefaultButtonProps) => {
   );
 };
 
-type TearsheetProps = {};
+type TearsheetProps = {
+  children?: React.ReactNode;
+};
 
 const Tearsheet = (props: TearsheetProps) => {
   const isOpen = useSnapshot(store.board).isOpen;
@@ -96,12 +128,58 @@ const Tearsheet = (props: TearsheetProps) => {
       onOpenChange={(isOpen) => (store.board.isOpen = isOpen)}
       className="fixed inset-0 bg-gray-900/50"
     >
-      <Modal className="fixed bottom-0 left-0 w-full z-10">
-        <TearsheetContent />
-      </Modal>
+      <Modal className="fixed top-0 left-0 w-full z-10">{props.children}</Modal>
     </ModalOverlay>
   );
 };
+
+const TearsheetContent = () => {
+  return (
+    <Dialog className="m-[15px] rounded-[5px] bg-[#292C2D] text-[#FFFFFF] outline-none">
+      {({ close }) => (
+        <form className="mx-auto w-[640px] h-[300px] grid grid-rows-[auto_1fr_auto] gap-[20px] p-[20px]">
+          <section className="flex items-center justify-between">
+            <Heading slot="title" className="font-semibold text-lg">
+              Edit shift
+            </Heading>
+            <Button onPress={close}>
+              <Icon.X />
+            </Button>
+          </section>
+
+          <section className="grid grid-cols-3">
+            <div>
+              <SelectInput label="Shift type" items={SHIFT_TYPES} />
+            </div>
+
+            <div>
+              <TimeInput label="Start time" hourCycle={24} />
+              <TimeInput label="End time" hourCycle={24} />
+            </div>
+
+            <div>
+              <TimeInput label="Break time" hourCycle={24} />
+            </div>
+          </section>
+
+          <section className="flex items-center justify-center gap-[20px] mt-[40px]">
+            <ActionButton onPress={close}>Cancel</ActionButton>
+            <ActionButton onPress={close} isPrimary>
+              Accept changes
+            </ActionButton>
+          </section>
+        </form>
+      )}
+    </Dialog>
+  );
+};
+
+const SHIFT_TYPES = {
+  EARLY_SHIFT: "Early shift",
+  LATE_SHIFT: "Late shift",
+  CUSTOM_SHIFT: "Custom shift",
+  VACATION: "Vacation",
+} as const;
 
 type TimeSelectProps = {
   startTime?: string;
@@ -109,7 +187,7 @@ type TimeSelectProps = {
   timeStep?: string;
 };
 
-const TimeSelect = (props: TimeSelectProps) => {
+const TimeSelect = (_props: TimeSelectProps) => {
   const startTime = DateTime.local(0, 1, 1, 8, 0, 0);
   const endTime = DateTime.local(0, 1, 1, 17, 0, 0);
   const timeSteps = Interval.fromDateTimes(startTime, endTime)
@@ -118,7 +196,7 @@ const TimeSelect = (props: TimeSelectProps) => {
 
   return (
     <Select>
-      <Label>Time</Label>
+      {/* <Label>Time</Label> */}
       <Button>
         <SelectValue />
         <span aria-hidden="true">▼</span>
@@ -134,45 +212,6 @@ const TimeSelect = (props: TimeSelectProps) => {
   );
 };
 
-const TearsheetContent = () => {
-  return (
-    <Dialog className="h-[250px] p-4 bg-white outline-none">
-      {({ close }) => (
-        <form>
-          <div className="grid grid-cols-2">
-            <Heading slot="title">Heading</Heading>
-            <div>
-              <Icon.X />
-            </div>
-          </div>
-
-          <TimeSelect />
-
-          <TextField className="grid grid-cols-2">
-            <Label>Start time</Label>
-            <Input type="time" />
-          </TextField>
-
-          <TextField className="grid grid-cols-2">
-            <Label>End time</Label>
-            <Input type="time" />
-          </TextField>
-
-          <TextField className="grid grid-cols-2">
-            <Label>Break time</Label>
-            <Input type="time" />
-          </TextField>
-
-          <div className="grid grid-cols-2">
-            <Button onPress={close}>Accept changes</Button>
-            <Button onPress={close}>Cancel</Button>
-          </div>
-        </form>
-      )}
-    </Dialog>
-  );
-};
-
 type StaffTableProps = {
   calendarDays: DateTime[];
 };
@@ -180,7 +219,7 @@ type StaffTableProps = {
 const StaffTable = (props: StaffTableProps) => {
   let lastCalendarMonthName = "";
   const numOfWeekdays = 7;
-  const memberNames = ["A 0000", "B 1111", "C 2222", "D 3333", "E 4444"];
+  const memberNames = ["Alex", "Dennis", "Marc", "Lena", "Emma"];
 
   return (
     <Table>
@@ -210,7 +249,7 @@ const StaffTable = (props: StaffTableProps) => {
       {memberNames.map((memberName) => {
         return (
           <TableRow key={memberName}>
-            <TableCell>
+            <TableCell hasFullWidth>
               <div className="p-[5px] pr-[10px]">
                 <AvatarLabel name={memberName} initials={memberName[0]} />
               </div>
@@ -220,16 +259,17 @@ const StaffTable = (props: StaffTableProps) => {
               const isDefaultCard = Math.random() > 0.4;
               return (
                 <TableCell key={index} hasDashedBorder>
-                  <Button
-                    className={clsx(
-                      !hasCard && "invisible",
-                      "flex outline-none bg-[#2D2D2D] w-[120px] h-[90px] rounded-[5px] p-[10px]",
-                      isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
-                      isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
-                    )}
-                    onPress={() => (store.board.isOpen = true)}
-                  >
-                    Lorem
+                  <Button className="flex outline-none" onPress={() => (store.board.isOpen = true)}>
+                    <div
+                      className={clsx(
+                        !hasCard && "invisible",
+                        "flex outline-none bg-[#2D2D2D] w-[120px] h-[90px] rounded-[5px] p-[10px]",
+                        isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
+                        isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
+                      )}
+                    >
+                      Text
+                    </div>
                   </Button>
                 </TableCell>
               );
@@ -285,6 +325,7 @@ const TableRow = (props: TableRowProps) => {
 type TableCellProps = {
   children?: React.ReactNode;
   hasDashedBorder?: boolean;
+  hasFullWidth?: boolean;
 };
 
 const TableCell = (props: TableCellProps) => {
@@ -292,7 +333,8 @@ const TableCell = (props: TableCellProps) => {
     <div
       className={clsx(
         "table-cell align-top text-left p-[5px] border border-[#333333]",
-        props.hasDashedBorder && "border-dashed"
+        props.hasDashedBorder && "border-dashed",
+        props.hasFullWidth && "w-full"
       )}
     >
       {props.children}
