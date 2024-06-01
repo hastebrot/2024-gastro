@@ -1,8 +1,9 @@
-import { Time } from "@internationalized/date";
+import { CalendarDate, Time, getLocalTimeZone, toCalendarDateTime } from "@internationalized/date";
 import clsx from "clsx";
 import * as Icon from "lucide-react";
 import { DateTime, Interval } from "luxon";
 import { useEffect, useState } from "react";
+import { useDateFormatter } from "react-aria";
 import {
   Button,
   Dialog,
@@ -22,6 +23,7 @@ import { useSnapshot } from "valtio";
 import { NumberInput } from "../component/NumberInput";
 import { SelectInput } from "../component/SelectInput";
 import { TimeInput } from "../component/TimeInput";
+import { classNames } from "../helper/classes";
 import { range, throwError } from "../helper/utils";
 import { store } from "../store";
 import { Layout } from "./Layout";
@@ -71,7 +73,7 @@ export const AdminPage = () => {
         </section>
 
         <Tearsheet>
-          <TearsheetContent />
+          <TearsheetContent onCompleted={(shiftValues) => alert(JSON.stringify(shiftValues))} />
         </Tearsheet>
       </div>
     </Layout>
@@ -98,13 +100,14 @@ const shiftLabels: Record<SHIFT_TYPES, string> = {
   [SHIFT_TYPES.VACATION]: "Vacation",
 };
 
-type ShiftDefinition = {
+type ShiftValues = {
+  shiftName?: string;
   startTime: Time | null;
   endTime: Time | null;
   breakTime: string;
 };
 
-const shiftDefinitions: Partial<Record<SHIFT_TYPES, ShiftDefinition>> = {
+const shiftDefinitions: Partial<Record<SHIFT_TYPES, ShiftValues>> = {
   [SHIFT_TYPES.NO_SHIFT]: {
     startTime: null,
     endTime: null,
@@ -197,7 +200,11 @@ const Tearsheet = (props: TearsheetProps) => {
   );
 };
 
-const TearsheetContent = () => {
+type TearsheetContentProps = {
+  onCompleted?: (shiftValues: ShiftValues) => void;
+};
+
+const TearsheetContent = (props: TearsheetContentProps) => {
   const [selectedShift, setSelectedShift] = useState<Key>(SHIFT_TYPES.NO_SHIFT);
   const [startTime, setStartTime] = useState<Time | null>(null);
   const [endTime, setEndTime] = useState<Time | null>(null);
@@ -267,7 +274,19 @@ const TearsheetContent = () => {
 
           <section className="flex items-center justify-center gap-[20px] mt-[40px]">
             <ActionButton onPress={close}>Cancel</ActionButton>
-            <ActionButton onPress={close} isPrimary isDisabled>
+            <ActionButton
+              onPress={() => {
+                close();
+                props.onCompleted &&
+                  props.onCompleted({
+                    shiftName: selectedShift as string,
+                    startTime,
+                    endTime,
+                    breakTime,
+                  });
+              }}
+              isPrimary
+            >
               Accept changes
             </ActionButton>
           </section>
@@ -350,28 +369,22 @@ const StaffTable = (props: StaffTableProps) => {
               </div>
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
+              const shiftValues: ShiftValues = {
+                shiftName: "Early shift",
+                startTime: new Time(7, 30),
+                endTime: new Time(18, 0),
+                breakTime: "30",
+              };
               const hasCard = Math.random() > 0.6;
               const isDefaultCard = Math.random() > 0.4;
               return (
                 <TableCell key={index} hasDashedBorder>
                   <Button className="flex outline-none" onPress={() => (store.board.isOpen = true)}>
-                    <div
-                      className={clsx(
-                        !hasCard && "invisible",
-                        "flex flex-col items-start outline-none bg-[#2D2D2D] w-[140px] h-[90px] rounded-[5px] p-[10px]",
-                        isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
-                        isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
-                      )}
-                    >
-                      <div>Early shift</div>
-                      <div className="flex items-center gap-1">
-                        <span>8:00 - 13:00</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Icon.Coffee className="w-[18px] h-[18px]" />
-                        <span>30 min</span>
-                      </div>
-                    </div>
+                    <CardItem
+                      shiftValues={shiftValues}
+                      isCardActive={hasCard}
+                      isDefaultCard={isDefaultCard}
+                    />
                   </Button>
                 </TableCell>
               );
@@ -380,6 +393,50 @@ const StaffTable = (props: StaffTableProps) => {
         );
       })}
     </Table>
+  );
+};
+
+type CardItemProps = {
+  shiftValues?: ShiftValues;
+  isCardActive: boolean;
+  isDefaultCard: boolean;
+};
+
+const CardItem = (props: CardItemProps) => {
+  const timeFormat = useDateFormatter({
+    timeStyle: "short",
+    hour12: false,
+  });
+  const toDate = (time: Time): Date => {
+    const dateTime = toCalendarDateTime(new CalendarDate(2000, 1, 1), time);
+    return dateTime.toDate(getLocalTimeZone());
+  };
+
+  return (
+    <div
+      className={classNames(
+        !props.isCardActive && "invisible",
+        "flex flex-col items-start outline-none bg-[#2D2D2D] w-[140px] h-[90px] rounded-[5px] p-[10px]",
+        props.isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
+        props.isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
+      )}
+    >
+      {props.shiftValues && (
+        <>
+          <div>{props.shiftValues.shiftName}</div>
+          <div className="flex items-center gap-1">
+            <span>
+              {timeFormat.format(toDate(props.shiftValues?.startTime!))} -{" "}
+              {timeFormat.format(toDate(props.shiftValues?.endTime!))}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Icon.Coffee className="w-[18px] h-[18px]" />
+            <span>{props.shiftValues?.breakTime} min</span>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
