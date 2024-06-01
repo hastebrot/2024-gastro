@@ -100,6 +100,7 @@ const shiftLabels: Record<SHIFT_TYPES, string> = {
 };
 
 type ShiftItem = {
+  shiftType?: SHIFT_TYPES;
   shiftName?: string;
   startTime: Time | null;
   endTime: Time | null;
@@ -340,28 +341,29 @@ const StaffTable = (props: StaffTableProps) => {
   };
   useEffect(() => {
     updateShiftItems("Alex-1", {
+      shiftType: SHIFT_TYPES.EARLY_SHIFT,
       shiftName: "Early shift",
       startTime: new Time(7, 30),
       endTime: new Time(18, 0),
       breakTime: "30",
     });
     updateShiftItems("Dennis-2", {
+      shiftType: SHIFT_TYPES.LATE_SHIFT,
       shiftName: "Late shift",
       startTime: new Time(7, 30),
       endTime: new Time(18, 0),
       breakTime: "30",
     });
     updateShiftItems("Marc-0", {
+      shiftType: SHIFT_TYPES.VACATION,
       shiftName: "Vacation",
       startTime: null,
       endTime: null,
       breakTime: "0",
     });
   }, []);
-
   let lastCalendarMonthName = "";
   const numOfWeekdays = 7;
-  console.log(shiftItems.size);
 
   return (
     <Table>
@@ -401,14 +403,14 @@ const StaffTable = (props: StaffTableProps) => {
               const shiftItem = shiftItems.get(shiftItemKey) ?? null;
               const hasCard = shiftItem !== null;
               const isDefaultCard = shiftItem === null || shiftItem.shiftName === "Vacation";
-              // const hasCard = Math.random() > 0.6;
-              // const isDefaultCard = Math.random() > 0.4;
+              const hasCardBody = shiftItem?.shiftType !== SHIFT_TYPES.VACATION;
               return (
                 <TableCell key={index} hasDashedBorder>
                   <Button className="flex outline-none" onPress={() => (store.board.isOpen = true)}>
                     <CardItem
-                      shiftItem={shiftItem}
-                      isCardActive={hasCard}
+                      shiftName={shiftItem?.shiftName ?? ""}
+                      shiftItem={hasCardBody ? shiftItem : null}
+                      hasCard={hasCard}
                       isDefaultCard={isDefaultCard}
                     />
                   </Button>
@@ -423,8 +425,9 @@ const StaffTable = (props: StaffTableProps) => {
 };
 
 type CardItemProps = {
+  shiftName: string;
   shiftItem: ShiftItem | null;
-  isCardActive: boolean;
+  hasCard: boolean;
   isDefaultCard: boolean;
 };
 
@@ -433,37 +436,35 @@ const CardItem = (props: CardItemProps) => {
     timeStyle: "short",
     hour12: false,
   });
-  const toDate = (time: Time): Date => {
-    const dateTime = toCalendarDateTime(new CalendarDate(2000, 1, 1), time);
+  const toDate = (time: Time | null): Date => {
+    const dateTime = toCalendarDateTime(new CalendarDate(2000, 1, 1), time ?? undefined);
     return dateTime.toDate(getLocalTimeZone());
   };
-  const shiftName = props.shiftItem?.shiftName ?? null;
-  const shiftItem = props.shiftItem ?? null;
 
   return (
     <div
       className={classNames(
-        !props.isCardActive && "invisible",
+        !props.hasCard && "invisible",
         "flex flex-col items-start outline-none bg-[#2D2D2D] w-[140px] h-[90px] rounded-[5px] p-[10px]",
         props.isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
         props.isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
       )}
     >
-      <div>{shiftName}</div>
-      {shiftItem && (
-        <>
+      <header>{props.shiftName}</header>
+      {props.shiftItem && (
+        <section>
           <div className="flex items-center gap-1">
             <span>
-              {timeFormat.format(toDate(shiftItem?.startTime!))} -{" "}
-              {timeFormat.format(toDate(shiftItem?.endTime!))}
+              {timeFormat.format(toDate(props.shiftItem!.startTime))} -{" "}
+              {timeFormat.format(toDate(props.shiftItem!.endTime))}
             </span>
           </div>
 
           <div className="flex items-center gap-1">
             <Icon.Coffee className="w-[18px] h-[18px] stroke-[1.5]" />
-            <span>{shiftItem?.breakTime} min</span>
+            <span>{props.shiftItem!.breakTime} min</span>
           </div>
-        </>
+        </section>
       )}
     </div>
   );
