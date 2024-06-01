@@ -6,20 +6,21 @@ import {
   ListBoxItem,
   Popover,
   Select,
+  SelectProps,
   SelectValue,
 } from "react-aria-components";
 
-type SelectInputProps = {
+type SelectInputProps<T extends object> = SelectProps<T> & {
   label?: string;
   items: Record<string, string>;
 };
 
-export const SelectInput = (props: SelectInputProps) => {
+export const SelectInput = (props: SelectInputProps<object>) => {
   const keys = Object.keys(props.items);
   const labels = Object.values(props.items);
 
   return (
-    <Select>
+    <Select {...props}>
       <Label>{props.label}</Label>
       <Button className="flex items-center whitespace-nowrap bg-[#404142] text-[#FFFFFF] rounded-[8px] h-[30px] px-[20px] gap-[4px]">
         <SelectValue />
@@ -29,10 +30,14 @@ export const SelectInput = (props: SelectInputProps) => {
       </Button>
 
       <Popover>
-        <ListBox className="text-[#FFFFFF] bg-[#292B2C]">
+        <ListBox className="flex flex-col bg-[#404142] text-[#FFFFFF] rounded-[8px] py-[5px] gap-[5px] outline-none">
           {keys.map((key, index) => {
             return (
-              <ListBoxItem className="cursor-pointer" key={key}>
+              <ListBoxItem
+                className="cursor-pointer w-full px-[20px] outline-none"
+                key={key}
+                id={key}
+              >
                 {labels[index]}
               </ListBoxItem>
             );

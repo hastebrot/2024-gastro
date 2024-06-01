@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import {
   FieldError,
   Input,
@@ -8,6 +7,7 @@ import {
   TextFieldProps,
   ValidationResult,
 } from "react-aria-components";
+import { classNames } from "../helper/classes";
 
 interface NumberInputProps extends TextFieldProps {
   label?: string;
@@ -19,18 +19,19 @@ export const NumberInput = ({ label, description, errorMessage, ...props }: Numb
   return (
     <TextField
       {...props}
-      className={clsx(
+      className={classNames(
         "[&_input::-webkit-outer-spin-button]:[-webkit-appearance:none]",
         "[&_input::-webkit-inner-spin-button]:[-webkit-appearance:none]",
         "[&_input[type=number]]:[-moz-appearance:textfield]"
       )}
+      type="number"
     >
       <Label>{label}</Label>
       <div className="flex w-fit gap-[4px] whitespace-nowrap">
         <Input
-          type="number"
-          className={clsx(
-            "bg-[#404142] text-[#FFFFFF] rounded-[8px] h-[30px] px-[10px] tabular-nums"
+          className={classNames(
+            "bg-[#404142] text-[#FFFFFF] rounded-[8px] h-[30px] px-[10px] tabular-nums",
+            "data-[disabled]:text-[#989898]"
           )}
         />
       </div>

@@ -9,6 +9,7 @@ import {
   TimeValue,
   ValidationResult,
 } from "react-aria-components";
+import { classNames } from "../helper/classes";
 
 interface TimeInputProps<T extends TimeValue> extends TimeFieldProps<T> {
   label?: string;
@@ -28,7 +29,10 @@ export const TimeInput = <T extends TimeValue>({
       <DateInput className="flex w-fit gap-[4px] whitespace-nowrap">
         {(segment) => (
           <DateSegment
-            className="bg-[#404142] text-[#FFFFFF] rounded-[8px] h-[30px] px-[10px] tabular-nums text-end"
+            className={classNames(
+              "bg-[#404142] text-[#FFFFFF] rounded-[8px] h-[30px] px-[10px] tabular-nums text-end",
+              "data-[disabled]:text-[#989898]"
+            )}
             segment={segment}
           />
         )}

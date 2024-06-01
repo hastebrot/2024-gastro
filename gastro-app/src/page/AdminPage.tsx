@@ -1,11 +1,13 @@
+import { Time } from "@internationalized/date";
 import clsx from "clsx";
 import * as Icon from "lucide-react";
 import { DateTime, Interval } from "luxon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   Dialog,
   Heading,
+  Key,
   ListBox,
   ListBoxItem,
   Modal,
@@ -76,10 +78,69 @@ export const AdminPage = () => {
   );
 };
 
+const memberNames = ["Alex", "Dennis", "Marc", "Lena", "Emma"];
+
+enum SHIFT_TYPES {
+  NO_SHIFT = "NO_SHIFT",
+  EARLY_SHIFT = "EARLY_SHIFT",
+  MIDDLE_SHIFT = "MIDDLE_SHIFT",
+  LATE_SHIFT = "LATE_SHIFT",
+  CUSTOM_SHIFT = "CUSTOM_SHIFT",
+  VACATION = "VACATION",
+}
+
+const shiftLabels: Record<SHIFT_TYPES, string> = {
+  [SHIFT_TYPES.NO_SHIFT]: "No shift",
+  [SHIFT_TYPES.EARLY_SHIFT]: "Early shift",
+  [SHIFT_TYPES.MIDDLE_SHIFT]: "Middle shift",
+  [SHIFT_TYPES.LATE_SHIFT]: "Late shift",
+  [SHIFT_TYPES.CUSTOM_SHIFT]: "Custom shift",
+  [SHIFT_TYPES.VACATION]: "Vacation",
+};
+
+type ShiftDefinition = {
+  startTime: Time | null;
+  endTime: Time | null;
+  breakTime: string;
+};
+
+const shiftDefinitions: Partial<Record<SHIFT_TYPES, ShiftDefinition>> = {
+  [SHIFT_TYPES.NO_SHIFT]: {
+    startTime: null,
+    endTime: null,
+    breakTime: "0",
+  },
+
+  [SHIFT_TYPES.VACATION]: {
+    startTime: null,
+    endTime: null,
+    breakTime: "0",
+  },
+
+  [SHIFT_TYPES.EARLY_SHIFT]: {
+    startTime: new Time(7, 30),
+    endTime: new Time(16, 0),
+    breakTime: "30",
+  },
+
+  [SHIFT_TYPES.MIDDLE_SHIFT]: {
+    startTime: new Time(7, 30),
+    endTime: new Time(18, 0),
+    breakTime: "30",
+  },
+
+  [SHIFT_TYPES.LATE_SHIFT]: {
+    startTime: new Time(9, 30),
+    endTime: new Time(18, 0),
+    breakTime: "30",
+  },
+};
+
 type ActionButtonProps = {
   children?: React.ReactNode;
   onPress?: (e: PressEvent) => void;
   isPrimary?: boolean;
+  isDisabled?: boolean;
 };
 
 const ActionButton = (props: ActionButtonProps) => {
@@ -88,9 +149,11 @@ const ActionButton = (props: ActionButtonProps) => {
       className={clsx(
         "h-[40px] w-[220px] flex items-center justify-center rounded-[18px] outline-none",
         !props.isPrimary && "border border-[#505051]",
-        props.isPrimary && "bg-[#FFFFFF] text-[#111315]"
+        props.isPrimary && "bg-[#FFFFFF] text-[#111315]",
+        "data-[disabled]:bg-[#47494B]"
       )}
       onPress={props.onPress}
+      isDisabled={props.isDisabled}
     >
       {props.children}
     </Button>
@@ -135,6 +198,22 @@ const Tearsheet = (props: TearsheetProps) => {
 };
 
 const TearsheetContent = () => {
+  const [selectedShift, setSelectedShift] = useState<Key>(SHIFT_TYPES.NO_SHIFT);
+  const [startTime, setStartTime] = useState<Time | null>(null);
+  const [endTime, setEndTime] = useState<Time | null>(null);
+  const [breakTime, setBreakTime] = useState<string>("0");
+  useEffect(() => {
+    const shiftDefinition = shiftDefinitions[selectedShift as SHIFT_TYPES];
+    if (shiftDefinition) {
+      setStartTime(shiftDefinition.startTime);
+      setEndTime(shiftDefinition.endTime);
+      setBreakTime(shiftDefinition.breakTime);
+    }
+  }, [selectedShift]);
+  const isStartTimeDisabled = selectedShift !== SHIFT_TYPES.CUSTOM_SHIFT;
+  const isEndTimeDisabled = selectedShift !== SHIFT_TYPES.CUSTOM_SHIFT;
+  const isBreakTimeDisabled = selectedShift !== SHIFT_TYPES.CUSTOM_SHIFT;
+
   return (
     <Dialog className="m-[15px] rounded-[5px] bg-[#292C2D] text-[#FFFFFF] outline-none">
       {({ close }) => (
@@ -148,24 +227,47 @@ const TearsheetContent = () => {
             </Button>
           </section>
 
-          <section className="grid grid-cols-3">
+          <section className="grid grid-cols-3 items-start">
             <div>
-              <SelectInput label="Shift type" items={SHIFT_TYPES} />
+              <SelectInput
+                label="Shift type"
+                items={shiftLabels}
+                selectedKey={selectedShift}
+                onSelectionChange={(key) => setSelectedShift(key)}
+              />
             </div>
 
             <div>
-              <TimeInput label="Start time" hourCycle={24} />
-              <TimeInput label="End time" hourCycle={24} />
+              <TimeInput
+                label="Start time"
+                hourCycle={24}
+                isDisabled={isStartTimeDisabled}
+                value={startTime}
+                onChange={setStartTime}
+              />
+              <TimeInput
+                label="End time"
+                hourCycle={24}
+                isDisabled={isEndTimeDisabled}
+                value={endTime}
+                onChange={setEndTime}
+              />
             </div>
 
-            <div>
-              <NumberInput label="Break time" />
+            <div className="flex items-center gap-[10px]">
+              <NumberInput
+                label="Break time"
+                description="minutes"
+                isDisabled={isBreakTimeDisabled}
+                value={breakTime}
+                onChange={setBreakTime}
+              />
             </div>
           </section>
 
           <section className="flex items-center justify-center gap-[20px] mt-[40px]">
             <ActionButton onPress={close}>Cancel</ActionButton>
-            <ActionButton onPress={close} isPrimary>
+            <ActionButton onPress={close} isPrimary isDisabled>
               Accept changes
             </ActionButton>
           </section>
@@ -174,13 +276,6 @@ const TearsheetContent = () => {
     </Dialog>
   );
 };
-
-const SHIFT_TYPES = {
-  EARLY_SHIFT: "Early shift",
-  LATE_SHIFT: "Late shift",
-  CUSTOM_SHIFT: "Custom shift",
-  VACATION: "Vacation",
-} as const;
 
 type TimeSelectProps = {
   startTime?: string;
@@ -220,7 +315,6 @@ type StaffTableProps = {
 const StaffTable = (props: StaffTableProps) => {
   let lastCalendarMonthName = "";
   const numOfWeekdays = 7;
-  const memberNames = ["Alex", "Dennis", "Marc", "Lena", "Emma"];
 
   return (
     <Table>
@@ -264,12 +358,19 @@ const StaffTable = (props: StaffTableProps) => {
                     <div
                       className={clsx(
                         !hasCard && "invisible",
-                        "flex outline-none bg-[#2D2D2D] w-[120px] h-[90px] rounded-[5px] p-[10px]",
+                        "flex flex-col items-start outline-none bg-[#2D2D2D] w-[140px] h-[90px] rounded-[5px] p-[10px]",
                         isDefaultCard ? "bg-[#2D2D2D]" : "bg-[#CAE8DD]",
                         isDefaultCard ? "text-[#FFFFFF]" : "text-[#000000]"
                       )}
                     >
-                      Text
+                      <div>Early shift</div>
+                      <div className="flex items-center gap-1">
+                        <span>8:00 - 13:00</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Icon.Coffee className="w-[18px] h-[18px]" />
+                        <span>30 min</span>
+                      </div>
                     </div>
                   </Button>
                 </TableCell>
