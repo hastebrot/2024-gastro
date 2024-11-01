@@ -1,5 +1,13 @@
 # 2024-gastro
 
+**sources:**
+
+| directory |
+| :--- |
+| [gastro-app/](gastro-app/) |
+
+---
+
 **usage:**
 
 - `❯ git clone https://github.com/hastebrot/2024-gastro`

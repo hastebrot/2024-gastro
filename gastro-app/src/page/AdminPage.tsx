@@ -8,14 +8,9 @@ import {
   Dialog,
   Heading,
   Key,
-  ListBox,
-  ListBoxItem,
   Modal,
   ModalOverlay,
-  Popover,
   PressEvent,
-  Select,
-  SelectValue,
 } from "react-aria-components";
 import { Link } from "react-router-dom";
 import { useSnapshot } from "valtio";
@@ -40,6 +35,40 @@ export const AdminPage = () => {
   const onNextWeekClicked = () => {
     setWeekOffset((weekOffset) => weekOffset + 1);
   };
+  const [currentShiftItem, setCurrentShiftItem] = useState<ShiftItem>({
+    shiftType: SHIFT_TYPES.NO_SHIFT,
+    shiftName: "",
+    startTime: null,
+    endTime: null,
+    breakTime: "",
+  });
+  const [shiftItems, setShiftItems] = useState<ShiftItems>(new Map());
+  const updateShiftItems = (key: ShiftItemKey, value: ShiftItem | null) => {
+    setShiftItems((map) => new Map(map.set(key, value)));
+  };
+  useEffect(() => {
+    updateShiftItems("Alex-1", {
+      shiftType: SHIFT_TYPES.EARLY_SHIFT,
+      shiftName: "Early shift",
+      startTime: new Time(7, 30),
+      endTime: new Time(18, 0),
+      breakTime: "30",
+    });
+    updateShiftItems("Dennis-2", {
+      shiftType: SHIFT_TYPES.LATE_SHIFT,
+      shiftName: "Late shift",
+      startTime: new Time(7, 30),
+      endTime: new Time(18, 0),
+      breakTime: "30",
+    });
+    updateShiftItems("Marc-0", {
+      shiftType: SHIFT_TYPES.VACATION,
+      shiftName: "Vacation",
+      startTime: null,
+      endTime: null,
+      breakTime: "0",
+    });
+  }, []);
 
   return (
     <Layout>
@@ -68,11 +97,14 @@ export const AdminPage = () => {
         </section>
 
         <section>
-          <StaffTable calendarDays={calendarDays} />
+          <StaffTable calendarDays={calendarDays} shiftItems={shiftItems} />
         </section>
 
         <Tearsheet>
-          <TearsheetContent onCompleted={(shiftValues) => alert(JSON.stringify(shiftValues))} />
+          <TearsheetContent
+            shiftItem={currentShiftItem}
+            onCompleted={(shiftValues) => alert(JSON.stringify(shiftValues))}
+          />
         </Tearsheet>
       </div>
     </Layout>
@@ -201,14 +233,17 @@ const Tearsheet = (props: TearsheetProps) => {
 };
 
 type TearsheetContentProps = {
-  onCompleted?: (shiftValues: ShiftItem) => void;
+  shiftItem: ShiftItem;
+  onCompleted?: (shiftItem: ShiftItem) => void;
 };
 
 const TearsheetContent = (props: TearsheetContentProps) => {
-  const [selectedShift, setSelectedShift] = useState<Key>(SHIFT_TYPES.NO_SHIFT);
-  const [startTime, setStartTime] = useState<Time | null>(null);
-  const [endTime, setEndTime] = useState<Time | null>(null);
-  const [breakTime, setBreakTime] = useState<string>("0");
+  const [selectedShift, setSelectedShift] = useState<Key>(
+    props.shiftItem.shiftType ?? SHIFT_TYPES.NO_SHIFT
+  );
+  const [startTime, setStartTime] = useState<Time | null>(props.shiftItem.startTime);
+  const [endTime, setEndTime] = useState<Time | null>(props.shiftItem.endTime);
+  const [breakTime, setBreakTime] = useState<string>(props.shiftItem.breakTime);
   useEffect(() => {
     const shiftDefinition = shiftDefinitions[selectedShift as SHIFT_TYPES];
     if (shiftDefinition) {
@@ -296,72 +331,15 @@ const TearsheetContent = (props: TearsheetContentProps) => {
   );
 };
 
-type TimeSelectProps = {
-  startTime?: string;
-  endTime?: string;
-  timeStep?: string;
-};
-
-const TimeSelect = (_props: TimeSelectProps) => {
-  const startTime = DateTime.local(0, 1, 1, 8, 0, 0);
-  const endTime = DateTime.local(0, 1, 1, 17, 0, 0);
-  const timeSteps = Interval.fromDateTimes(startTime, endTime)
-    .splitBy({ minutes: 10 })
-    .map((interval) => interval.start ?? throwError("invalid start datetime in interval"));
-
-  return (
-    <Select>
-      {/* <Label>Time</Label> */}
-      <Button>
-        <SelectValue />
-        <span aria-hidden="true">▼</span>
-      </Button>
-      <Popover>
-        <ListBox>
-          {timeSteps.map((timeStep) => {
-            return <ListBoxItem key={timeStep.toISOTime()}>{timeStep.toISOTime()}</ListBoxItem>;
-          })}
-        </ListBox>
-      </Popover>
-    </Select>
-  );
-};
-
 type StaffTableProps = {
   calendarDays: DateTime[];
+  shiftItems: ShiftItems;
 };
 
-const StaffTable = (props: StaffTableProps) => {
-  type ShiftItemKey = string;
-  type ShiftItems = Map<ShiftItemKey, ShiftItem | null>;
+type ShiftItemKey = string;
+type ShiftItems = Map<ShiftItemKey, ShiftItem | null>;
 
-  const [shiftItems, setShiftItems] = useState<ShiftItems>(new Map());
-  const updateShiftItems = (key: ShiftItemKey, value: ShiftItem | null) => {
-    setShiftItems((map) => new Map(map.set(key, value)));
-  };
-  useEffect(() => {
-    updateShiftItems("Alex-1", {
-      shiftType: SHIFT_TYPES.EARLY_SHIFT,
-      shiftName: "Early shift",
-      startTime: new Time(7, 30),
-      endTime: new Time(18, 0),
-      breakTime: "30",
-    });
-    updateShiftItems("Dennis-2", {
-      shiftType: SHIFT_TYPES.LATE_SHIFT,
-      shiftName: "Late shift",
-      startTime: new Time(7, 30),
-      endTime: new Time(18, 0),
-      breakTime: "30",
-    });
-    updateShiftItems("Marc-0", {
-      shiftType: SHIFT_TYPES.VACATION,
-      shiftName: "Vacation",
-      startTime: null,
-      endTime: null,
-      breakTime: "0",
-    });
-  }, []);
+const StaffTable = (props: StaffTableProps) => {
   let lastCalendarMonthName = "";
   const numOfWeekdays = 7;
 
@@ -400,7 +378,7 @@ const StaffTable = (props: StaffTableProps) => {
             </TableCell>
             {range(0, numOfWeekdays).map((index) => {
               const shiftItemKey = `${memberName}-${index}`;
-              const shiftItem = shiftItems.get(shiftItemKey) ?? null;
+              const shiftItem = props.shiftItems.get(shiftItemKey) ?? null;
               const hasCard = shiftItem !== null;
               const isDefaultCard = shiftItem === null || shiftItem.shiftName === "Vacation";
               const hasCardBody = shiftItem?.shiftType !== SHIFT_TYPES.VACATION;
